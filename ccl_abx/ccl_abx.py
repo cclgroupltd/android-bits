@@ -18,21 +18,20 @@ SOFTWARE.
 """
 
 import base64
+import enum
 import struct
 import typing
 import xml.etree.ElementTree as etree
 
 
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 __description__ = "Python module to convert Android ABX binary XML files"
 __contact__ = "Alex Caithness"
 
 # See: base/core/java/com/android/internal/util/BinaryXmlSerializer.java
 
 
-class AbxReader:
-    MAGIC = b"ABX\x00"
-
+class XmlType(enum.IntEnum):
     # These first constants are from: libcore/xml/src/main/java/org/xmlpull/v1/XmlPullParser.java
     # most of them are unused, but here for completeness
     START_DOCUMENT = 0
@@ -49,6 +48,8 @@ class AbxReader:
 
     ATTRIBUTE = 15
 
+
+class DataType(enum.IntEnum):
     TYPE_NULL = 1 << 4
     TYPE_STRING = 2 << 4
     TYPE_STRING_INTERNED = 3 << 4
@@ -62,6 +63,10 @@ class AbxReader:
     TYPE_DOUBLE = 11 << 4
     TYPE_BOOLEAN_TRUE = 12 << 4
     TYPE_BOOLEAN_FALSE = 13 << 4
+
+
+class AbxReader:
+    MAGIC = b"ABX\x00"
 
     def _read_raw(self, length):
         buff = self._stream.read(length)
@@ -135,20 +140,20 @@ class AbxReader:
             # The lower nibble gives us the XML type. This is mostly defined in XmlPullParser.java, other than
             # AATRIBUTE which is from BinaryXmlSerializer
             xml_type = token & 0x0f
-            if xml_type == AbxReader.START_DOCUMENT:
-                assert token & 0xf0 == AbxReader.TYPE_NULL
+            if xml_type == XmlType.START_DOCUMENT:
+                assert token & 0xf0 == DataType.TYPE_NULL
                 if document_opened:
                     raise ValueError(f"Unexpected START_DOCUMENT at offset {self._stream.tell()}")
                 document_opened = True
 
-            elif xml_type == AbxReader.END_DOCUMENT:
-                assert token & 0xf0 == AbxReader.TYPE_NULL
+            elif xml_type == XmlType.END_DOCUMENT:
+                assert token & 0xf0 == DataType.TYPE_NULL
                 assert len(element_stack) == 0
                 assert document_opened
                 break
 
-            elif xml_type == AbxReader.START_TAG:
-                assert token & 0xf0 == AbxReader.TYPE_STRING_INTERNED
+            elif xml_type == XmlType.START_TAG:
+                assert token & 0xf0 == DataType.TYPE_STRING_INTERNED
                 assert document_opened
                 assert not root_closed
 
@@ -161,8 +166,8 @@ class AbxReader:
                     element = etree.SubElement(element_stack[-1], tag_name)
                     element_stack.append(element)
 
-            elif xml_type == AbxReader.END_TAG:
-                assert token & 0xf0 == AbxReader.TYPE_STRING_INTERNED
+            elif xml_type == XmlType.END_TAG:
+                assert token & 0xf0 == DataType.TYPE_STRING_INTERNED
                 assert len(element_stack) >= 0
 
                 tag_name = self._read_interned_string()
@@ -175,10 +180,10 @@ class AbxReader:
                 if len(element_stack) == 0:
                     root_closed = True
                     root = last
-            elif xml_type == AbxReader.TEXT:
+            elif xml_type == XmlType.TEXT:
                 value = self._read_string_raw()
                 raise NotImplementedError()  # don't know how to best account for text vs tail yet
-            elif xml_type == AbxReader.ATTRIBUTE:
+            elif xml_type == XmlType.ATTRIBUTE:
                 assert len(element_stack) >= 0
 
                 attribute_name = self._read_interned_string()
@@ -187,33 +192,33 @@ class AbxReader:
 
                 data_type = token & 0xf0
 
-                if data_type == AbxReader.TYPE_NULL:
+                if data_type == DataType.TYPE_NULL:
                     value = None  # remember to output xml as "null"
-                elif data_type == AbxReader.TYPE_BOOLEAN_TRUE:
+                elif data_type == DataType.TYPE_BOOLEAN_TRUE:
                     value = True  # remember to output xml as "true"
-                elif data_type == AbxReader.TYPE_BOOLEAN_FALSE:
+                elif data_type == DataType.TYPE_BOOLEAN_FALSE:
                     value = False  # remember to output xml as "false"
-                elif data_type == AbxReader.TYPE_INT:
+                elif data_type == DataType.TYPE_INT:
                     value = self._read_int()
-                elif data_type == AbxReader.TYPE_INT_HEX:
+                elif data_type == DataType.TYPE_INT_HEX:
                     value = f"{self._read_int():x}"  # don't do this conversion in dict
-                elif data_type == AbxReader.TYPE_LONG:
+                elif data_type == DataType.TYPE_LONG:
                     value = self._read_long()
-                elif data_type == AbxReader.TYPE_LONG_HEX:
+                elif data_type == DataType.TYPE_LONG_HEX:
                     value = f"{self._read_int():x}"  # don't do this conversion in dict
-                elif data_type == AbxReader.TYPE_FLOAT:
+                elif data_type == DataType.TYPE_FLOAT:
                     value = self._read_float()
-                elif data_type == AbxReader.TYPE_DOUBLE:
+                elif data_type == DataType.TYPE_DOUBLE:
                     value = self._read_double()
-                elif data_type == AbxReader.TYPE_STRING:
+                elif data_type == DataType.TYPE_STRING:
                     value = self._read_string_raw()
-                elif data_type == AbxReader.TYPE_STRING_INTERNED:
+                elif data_type == DataType.TYPE_STRING_INTERNED:
                     value = self._read_interned_string()
-                elif data_type == AbxReader.TYPE_BYTES_HEX:
+                elif data_type == DataType.TYPE_BYTES_HEX:
                     length = self._read_short()  # is this safe?
                     value = self._read_raw(length)
                     value = value.hex()  # skip this step for dict
-                elif data_type == AbxReader.TYPE_BYTES_BASE64:
+                elif data_type == DataType.TYPE_BYTES_BASE64:
                     length = self._read_short()  # is this safe?
                     value = self._read_raw(length)
                     value = base64.encodebytes(value).decode().strip()
