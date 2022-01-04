@@ -1,0 +1,14 @@
+<root>
+    <element value-int="100">100 stored as an int</element>
+    <element value-inthex="64">0x64 stored as an int</element>
+    <element value-long="100">100 stored as an long</element>
+    <element value-longhex="64">0x64 stored as an long</element>
+    <element value-float="0.5">0.5 stored as a float</element>
+    <element value-float="0.3">0.3 stored as a float</element>
+    <element value-double="0.5">0.5 stored as a double</element>
+    <element value-double="0.3">0.3 stored as a double</element>
+    <element value-bool="true">true stored as a bool</element>
+    <element value-bool="false">false stored as a bool</element>
+    <element value-byteshex="123456aabbccddeeffc0ffee">123456aabbccddeeffc0ffee as bytes (hex)</element>
+    <element value-base64="us5k">us5k (0xbace64) as bytes (base64)</element>
+</root>

@@ -1,0 +1,13 @@
+<e1>
+    <e1_1>
+        <e1_1_1 a1_1_1_1="value of a1_1_1_1">Text content in e1_1_1</e1_1_1>
+        <e1_1_2 a1_1_2_1="value of a1_1_2_1" a1_1_2_2="value of a1_1_2_2">Text content in e1_1_2</e1_1_2>
+        <e1_1_3/>
+    </e1_1>
+    <e1_2>
+        <e1_2_1>Text content in e1_2_1</e1_2_1>
+        <e1_2_2>Text content in e1_2_2</e1_2_2>
+        <e1_2_3></e1_2_3>
+        <e1_2_4 a1_2_4_1="value of a1_2_4_1"></e1_2_4>
+    </e1_2>
+</e1>

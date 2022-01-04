@@ -1,0 +1,10 @@
+<root>
+    <repeated_and_interned interned_attribute="The name of this attibute will be interned 1">First repeated element name</repeated_and_interned>
+    <repeated_and_interned interned_attribute="The name of this attibute will be interned 2">Second repeated element name</repeated_and_interned>
+    <repeated_and_interned interned_attribute="The name of this attibute will be interned 3">Third repeated element name</repeated_and_interned>
+    <repeated_and_interned interned_attribute="The name of this attibute will be interned 4">Fourth repeated element name</repeated_and_interned>
+    <repeated_and_interned interned_attribute="The name of this attibute will be interned 5">Fifth repeated element name</repeated_and_interned>
+    <repeated_and_interned interned_attribute="The name of this attibute will be interned 6">Sixth repeated element name</repeated_and_interned>
+    <repeated_and_interned interned_attribute="The name of this attibute will be interned 7">Seventh repeated element name</repeated_and_interned>
+    <repeated_and_interned interned_attribute="The name of this attibute will be interned 8">Eighth repeated element name</repeated_and_interned>
+</root>
