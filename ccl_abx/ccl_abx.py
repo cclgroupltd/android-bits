@@ -24,7 +24,7 @@ import typing
 import xml.etree.ElementTree as etree
 
 
-__version__ = "0.0.3"
+__version__ = "0.0.4"
 __description__ = "Python module to convert Android ABX binary XML files"
 __contact__ = "Alex Caithness"
 
@@ -139,7 +139,7 @@ class AbxReader:
             data_start_offset = self._stream.tell()
 
             # The lower nibble gives us the XML type. This is mostly defined in XmlPullParser.java, other than
-            # AATRIBUTE which is from BinaryXmlSerializer
+            # ATTRIBUTE which is from BinaryXmlSerializer
             xml_type = token & 0x0f
             if xml_type == XmlType.START_DOCUMENT:
                 assert token & 0xf0 == DataType.TYPE_NULL
@@ -182,9 +182,12 @@ class AbxReader:
                     root_closed = True
                     root = last
             elif xml_type == XmlType.TEXT:
-                if len(element_stack[-1]):
-                    raise NotImplementedError("Can't deal with elements with mixed text and element contents")
                 value = self._read_string_raw()
+                if len(element_stack[-1]):
+                    if len(value.strip()) == 0:  # layout whitespace can be safely discarded
+                        continue
+                    raise NotImplementedError("Can't deal with elements with mixed text and element contents")
+
                 if element_stack[-1].text is None:
                     element_stack[-1].text = value
                 else:
@@ -211,7 +214,7 @@ class AbxReader:
                 elif data_type == DataType.TYPE_LONG:
                     value = self._read_long()
                 elif data_type == DataType.TYPE_LONG_HEX:
-                    value = f"{self._read_int():x}"  # don't do this conversion in dict
+                    value = f"{self._read_long():x}"  # don't do this conversion in dict
                 elif data_type == DataType.TYPE_FLOAT:
                     value = self._read_float()
                 elif data_type == DataType.TYPE_DOUBLE:
