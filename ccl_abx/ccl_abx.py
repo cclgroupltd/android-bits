@@ -24,7 +24,7 @@ import typing
 import xml.etree.ElementTree as etree
 
 
-__version__ = "0.0.4"
+__version__ = "0.0.5"
 __description__ = "Python module to convert Android ABX binary XML files"
 __contact__ = "Alex Caithness"
 
@@ -118,7 +118,14 @@ class AbxReader:
         self._interned_strings = []
         self._stream = stream
 
-    def read(self):
+    def read(self, *, is_multi_root=False):
+        """
+        Read the ABX file
+        :param is_multi_root: some xml files on Android contain multiple root elements making reading them using a
+        document model problematic. For these files, set is_multi_root to True and the output ElementTree will wrap
+        the elements in a single "root" element.
+        :return: ElementTree representation of the data.
+        """
         magic = self._read_raw(len(AbxReader.MAGIC))
         if magic != AbxReader.MAGIC:
             raise ValueError(f"Invalid magic. Expected {AbxReader.MAGIC.hex()}; got: {magic.hex()}")
@@ -127,7 +134,9 @@ class AbxReader:
         root_closed = False
         root = None
         element_stack = []  # because ElementTree doesn't support parents we maintain a stack
-        current_text = ""
+        if is_multi_root:
+            root = etree.Element("root")
+            element_stack.append(root)
 
         while True:
             # Read the token. This gives us the XML data type and the raw data type.
@@ -149,7 +158,7 @@ class AbxReader:
 
             elif xml_type == XmlType.END_DOCUMENT:
                 assert token & 0xf0 == DataType.TYPE_NULL
-                assert len(element_stack) == 0
+                assert len(element_stack) == 0 or (len(element_stack) == 1 and is_multi_root)
                 assert document_opened
                 break
 
@@ -238,7 +247,7 @@ class AbxReader:
             else:
                 raise NotImplementedError(f"unexpected XML type: {xml_type}")
 
-        assert root_closed
+        assert root_closed or (is_multi_root and len(element_stack) == 1 and element_stack[0] is root)
         assert root is not None
         tree = etree.ElementTree(root)
 
@@ -247,9 +256,10 @@ class AbxReader:
 
 def main(args):
     in_path = pathlib.Path(args[0])
+    multi_root = "-mr" in args[1:]
     with in_path.open("rb") as f:
         reader = AbxReader(f)
-        doc = reader.read()
+        doc = reader.read(is_multi_root=multi_root)
 
     print(etree.tostring(doc.getroot()).decode())
 
