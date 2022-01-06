@@ -28,3 +28,11 @@ with input_path.open("rb") as f:
     doc = reader.read()  # Call the reader object's read() function which returns an ElementTree Element which is the root of the document
 
 ```
+
+## Known issues
+Our testing so far suggests that the module will round-trip an ABX created from a known XML file except for
+* Ignorable whitespace (e.g layout whitespace around tags) will be discarded
+* Elements with mixed content (text *and* child elements) will cause an exception to be raised - it doesn't appear that the methods that create ABX files in Android will create this structure though, so it appears to be a non-issue for now.
+* If the code which *encodes* the ABX file attempts to convert numerical attributes to floating-point numbers then the usual caveats around floating-point accuracy apply
+
+We have provided some test files so that you can confirm the behaviour of the module, and the `makeabx` Java application found in this repo can be used to generate further test files if needed.
