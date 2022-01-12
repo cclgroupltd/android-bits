@@ -24,7 +24,7 @@ import typing
 import xml.etree.ElementTree as etree
 
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __description__ = "Python module to convert Android ABX binary XML files"
 __contact__ = "Alex Caithness"
 
@@ -229,9 +229,11 @@ class AbxReader:
                 if data_type == DataType.TYPE_NULL:
                     value = None  # remember to output xml as "null"
                 elif data_type == DataType.TYPE_BOOLEAN_TRUE:
-                    value = True  # remember to output xml as "true"
+                    # value = True  # remember to output xml as "true"
+                    value = "true"
                 elif data_type == DataType.TYPE_BOOLEAN_FALSE:
-                    value = False  # remember to output xml as "false"
+                    # value = False  # remember to output xml as "false"
+                    value = "false"
                 elif data_type == DataType.TYPE_INT:
                     value = self._read_int()
                 elif data_type == DataType.TYPE_INT_HEX:
