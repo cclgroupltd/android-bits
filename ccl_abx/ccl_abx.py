@@ -156,12 +156,14 @@ class AbxReader:
             # ATTRIBUTE which is from BinaryXmlSerializer
             xml_type = token & 0x0f
             if xml_type == XmlType.START_DOCUMENT:
+                # Since Android 13, START_DOCUMENT can essentially be considered no-op as it's implied by the reader to
+                # always be present (regardless of whether it is).
                 if token & 0xf0 != DataType.TYPE_NULL:
                     raise AbxDecodeError(
                         f"START_DOCUMENT with an invalid data type at offset {data_start_offset - 1}")
                 #if document_opened:
-                if not root_closed:
-                    raise AbxDecodeError(f"Unexpected START_DOCUMENT at offset {data_start_offset - 1}")
+                # if not root_closed:
+                #     raise AbxDecodeError(f"Unexpected START_DOCUMENT at offset {data_start_offset - 1}")
                 document_opened = True
 
             elif xml_type == XmlType.END_DOCUMENT:
