@@ -1,5 +1,5 @@
 """
-Copyright 2021-2022, CCL Forensics
+Copyright 2021-2024, CCL Forensics
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
 the Software without restriction, including without limitation the rights to
@@ -24,7 +24,7 @@ import typing
 import xml.etree.ElementTree as etree
 
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __description__ = "Python module to convert Android ABX binary XML files"
 __contact__ = "Alex Caithness"
 
@@ -86,6 +86,10 @@ class AbxReader:
         buff = self._read_raw(2)
         return struct.unpack(">h", buff)[0]
 
+    def _read_unsigned_short(self):
+        buff = self._read_raw(2)
+        return struct.unpack(">H", buff)[0]
+
     def _read_int(self):
         buff = self._read_raw(4)
         return struct.unpack(">i", buff)[0]
@@ -103,9 +107,9 @@ class AbxReader:
         return struct.unpack(">d", buff)[0]
 
     def _read_string_raw(self):
-        length = self._read_short()
-        if length < 0:
-            raise ValueError(f"Negative string length at offset {self._stream.tell() - 2}")
+        length = self._read_unsigned_short()
+        # if length < 0:
+        #     raise ValueError(f"Negative string length at offset {self._stream.tell() - 2}")
         buff = self._read_raw(length)
         return buff.decode("utf-8")
 
