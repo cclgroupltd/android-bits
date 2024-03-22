@@ -1,5 +1,5 @@
 """
-Copyright 2021-2022, CCL Forensics
+Copyright 2021-2024, CCL Forensics
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
 the Software without restriction, including without limitation the rights to
@@ -24,7 +24,7 @@ import typing
 import xml.etree.ElementTree as etree
 
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __description__ = "Python module to convert Android ABX binary XML files"
 __contact__ = "Alex Caithness"
 
@@ -86,6 +86,10 @@ class AbxReader:
         buff = self._read_raw(2)
         return struct.unpack(">h", buff)[0]
 
+    def _read_unsigned_short(self):
+        buff = self._read_raw(2)
+        return struct.unpack(">H", buff)[0]
+
     def _read_int(self):
         buff = self._read_raw(4)
         return struct.unpack(">i", buff)[0]
@@ -103,9 +107,9 @@ class AbxReader:
         return struct.unpack(">d", buff)[0]
 
     def _read_string_raw(self):
-        length = self._read_short()
-        if length < 0:
-            raise ValueError(f"Negative string length at offset {self._stream.tell() - 2}")
+        length = self._read_unsigned_short()
+        # if length < 0:
+        #     raise ValueError(f"Negative string length at offset {self._stream.tell() - 2}")
         buff = self._read_raw(length)
         return buff.decode("utf-8")
 
@@ -134,7 +138,8 @@ class AbxReader:
         if magic != AbxReader.MAGIC:
             raise ValueError(f"Invalid magic. Expected {AbxReader.MAGIC.hex()}; got: {magic.hex()}")
 
-        document_opened = False
+        #document_opened = False
+        document_opened = True
         root_closed = False
         root = None
         element_stack = []  # because ElementTree doesn't support parents we maintain a stack
@@ -155,29 +160,32 @@ class AbxReader:
             # ATTRIBUTE which is from BinaryXmlSerializer
             xml_type = token & 0x0f
             if xml_type == XmlType.START_DOCUMENT:
+                # Since Android 13, START_DOCUMENT can essentially be considered no-op as it's implied by the reader to
+                # always be present (regardless of whether it is).
                 if token & 0xf0 != DataType.TYPE_NULL:
                     raise AbxDecodeError(
-                        f"START_DOCUMENT with an invalid data type at offset {data_start_offset} - 1")
-                if document_opened:
-                    raise AbxDecodeError(f"Unexpected START_DOCUMENT at offset {data_start_offset}")
+                        f"START_DOCUMENT with an invalid data type at offset {data_start_offset - 1}")
+                #if document_opened:
+                # if not root_closed:
+                #     raise AbxDecodeError(f"Unexpected START_DOCUMENT at offset {data_start_offset - 1}")
                 document_opened = True
 
             elif xml_type == XmlType.END_DOCUMENT:
                 if token & 0xf0 != DataType.TYPE_NULL:
-                    raise AbxDecodeError(f"END_DOCUMENT with an invalid data type at offset {data_start_offset}")
+                    raise AbxDecodeError(f"END_DOCUMENT with an invalid data type at offset {data_start_offset - 1}")
                 if not (len(element_stack) == 0 or (len(element_stack) == 1 and is_multi_root)):
-                    raise AbxDecodeError(f"END_DOCUMENT with unclosed elements at offset {data_start_offset}")
+                    raise AbxDecodeError(f"END_DOCUMENT with unclosed elements at offset {data_start_offset - 1}")
                 if not document_opened:
-                    raise AbxDecodeError(f"END_DOCUMENT before document started at offset {data_start_offset}")
+                    raise AbxDecodeError(f"END_DOCUMENT before document started at offset {data_start_offset - 1}")
                 break
 
             elif xml_type == XmlType.START_TAG:
                 if token & 0xf0 != DataType.TYPE_STRING_INTERNED:
-                    raise AbxDecodeError(f"START_TAG with an invalid data type at offset {data_start_offset}")
+                    raise AbxDecodeError(f"START_TAG with an invalid data type at offset {data_start_offset - 1}")
                 if not document_opened:
-                    raise AbxDecodeError(f"START_TAG before document started at offset {data_start_offset}")
+                    raise AbxDecodeError(f"START_TAG before document started at offset {data_start_offset - 1}")
                 if root_closed:
-                    raise AbxDecodeError(f"START_TAG after root was closed started at offset {data_start_offset}")
+                    raise AbxDecodeError(f"START_TAG after root was closed started at offset {data_start_offset - 1}")
 
                 tag_name = self._read_interned_string()
                 if len(element_stack) == 0:
