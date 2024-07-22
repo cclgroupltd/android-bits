@@ -11,9 +11,9 @@ public class Main {
             String me = new File(Main.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getName();
 
             System.out.println();
-            System.out.printf("USAGE: %s <input.xml>\n", me);
+            System.out.printf("USAGE: %s <input.xml> <optional output.xml>\n", me);
             System.out.println();
-            System.out.println("Converts an XML file to an ABX file (the output will have the same path as the input");
+            System.out.println("Converts an XML file to an ABX file (the output will have the same path as the input if none was specified");
             System.out.println("with an '.abx' extension added).");
             System.out.println();
             System.out.println("If one of the following suffixes are found on an attribute's name, they will be");
@@ -32,6 +32,9 @@ public class Main {
             return;
         }
         String outputPath = inputPath + ".abx";
+        if(args.length>1) {
+        	outputPath = args[1];
+        }
         if(new File(outputPath).exists()){
             System.out.printf("ERROR: '%s' already exists\n", outputPath);
         }
